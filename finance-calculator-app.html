@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinCalc Pro — Smart Finance Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050810;
+    --surface: #0d1117;
+    --surface2: #141b26;
+    --surface3: #1c2535;
+    --blue: #2563eb;
+    --blue2: #3b82f6;
+    --blue3: #60a5fa;
+    --cyan: #06b6d4;
+    --accent: #0ea5e9;
+    --text: #f0f6ff;
+    --text2: #94a3b8;
+    --text3: #475569;
+    --border: #1e2d45;
+    --glow: rgba(37,99,235,0.18);
+    --success: #10b981;
+    --warning: #f59e0b;
+    --radius: 16px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(37,99,235,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(37,99,235,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glow orbs */
+  .orb1, .orb2 {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.35;
+  }
+  .orb1 { width:500px; height:500px; background:#1d4ed8; top:-100px; left:-150px; }
+  .orb2 { width:400px; height:400px; background:#0369a1; bottom:-100px; right:-100px; }
+
+  /* HEADER */
+  header {
+    position: relative; z-index: 10;
+    padding: 20px 24px 0;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-icon {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--blue), var(--cyan));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 20px rgba(37,99,235,0.4);
+  }
+  .logo-text { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo-text span { color: var(--blue3); }
+
+  .badge {
+    background: linear-gradient(90deg, var(--blue), var(--cyan));
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+
+  /* HERO */
+  .hero {
+    position: relative; z-index: 10;
+    text-align: center;
+    padding: 32px 24px 20px;
+  }
+  .hero h1 {
+    font-size: clamp(26px, 6vw, 38px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -1px;
+  }
+  .hero h1 span {
+    background: linear-gradient(90deg, var(--blue3), var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero p {
+    margin-top: 10px;
+    color: var(--text2);
+    font-size: 14px;
+    font-family: 'DM Mono', monospace;
+    font-weight: 300;
+  }
+
+  /* CALCULATOR GRID */
+  .calc-grid {
+    position: relative; z-index: 10;
+    padding: 12px 16px 24px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .calc-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 16px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .calc-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--glow), transparent);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    border-radius: var(--radius);
+  }
+  .calc-card:hover::before, .calc-card.active-card::before { opacity: 1; }
+  .calc-card:hover {
+    border-color: var(--blue);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(37,99,235,0.2);
+  }
+  .calc-card.active-card {
+    border-color: var(--blue2);
+    box-shadow: 0 0 0 2px var(--blue), 0 8px 30px rgba(37,99,235,0.3);
+  }
+
+  .card-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    margin-bottom: 10px;
+    position: relative; z-index: 1;
+  }
+  .card-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    position: relative; z-index: 1;
+    line-height: 1.3;
+  }
+  .card-desc {
+    font-size: 10px;
+    color: var(--text3);
+    margin-top: 3px;
+    font-family: 'DM Mono', monospace;
+    position: relative; z-index: 1;
+  }
+
+  /* Color variants */
+  .c1 .card-icon { background: rgba(37,99,235,0.15); }
+  .c2 .card-icon { background: rgba(6,182,212,0.15); }
+  .c3 .card-icon { background: rgba(16,185,129,0.15); }
+  .c4 .card-icon { background: rgba(245,158,11,0.15); }
+  .c5 .card-icon { background: rgba(139,92,246,0.15); }
+  .c6 .card-icon { background: rgba(239,68,68,0.15); }
+  .c7 .card-icon { background: rgba(249,115,22,0.15); }
+  .c8 .card-icon { background: rgba(20,184,166,0.15); }
+  .c9 .card-icon { background: rgba(99,102,241,0.15); }
+
+  /* CALCULATOR PANEL */
+  .panel {
+    position: relative; z-index: 10;
+    margin: 0 16px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    display: none;
+    animation: slideUp 0.3s ease;
+  }
+  .panel.visible { display: block; }
+
+  @keyframes slideUp {
+    from { opacity:0; transform:translateY(20px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  .panel-header {
+    padding: 16px 20px;
+    background: linear-gradient(90deg, rgba(37,99,235,0.12), rgba(6,182,212,0.08));
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .panel-header .ph-icon {
+    font-size: 22px;
+    width: 40px; height: 40px;
+    background: rgba(37,99,235,0.2);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .panel-title { font-size: 16px; font-weight: 800; }
+  .panel-sub { font-size: 11px; color: var(--text2); font-family: 'DM Mono', monospace; }
+
+  .panel-body { padding: 20px; }
+
+  /* INPUTS */
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 6px;
+  }
+  .field input, .field select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  .field input:focus, .field select:focus {
+    border-color: var(--blue2);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+  }
+  .field select option { background: var(--surface2); }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* BUTTON */
+  .calc-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--blue), var(--cyan));
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 20px rgba(37,99,235,0.35);
+    margin-top: 4px;
+  }
+  .calc-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 28px rgba(37,99,235,0.45);
+  }
+  .calc-btn:active { transform: translateY(0); }
+
+  /* RESULT */
+  .result-box {
+    margin-top: 16px;
+    background: var(--surface2);
+    border: 1px solid var(--blue);
+    border-radius: 14px;
+    padding: 18px 16px;
+    animation: fadeIn 0.3s ease;
+    display: none;
+  }
+  .result-box.show { display: block; }
+
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+  .result-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 12px;
+  }
+
+  .result-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .result-row:last-child { border-bottom: none; }
+  .result-row .rl { font-size: 12px; color: var(--text2); font-family: 'DM Mono', monospace; }
+  .result-row .rv {
+    font-size: 15px; font-weight: 700;
+    color: var(--blue3);
+    font-family: 'DM Mono', monospace;
+  }
+  .result-row.highlight .rv {
+    font-size: 20px;
+    color: var(--cyan);
+    text-shadow: 0 0 20px rgba(6,182,212,0.4);
+  }
+
+  /* CURRENCY TABS */
+  .curr-tabs {
+    display: flex; gap: 6px; margin-bottom: 14px;
+  }
+  .curr-tab {
+    flex: 1;
+    padding: 8px 4px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text2);
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .curr-tab.active {
+    background: rgba(37,99,235,0.2);
+    border-color: var(--blue2);
+    color: var(--blue3);
+  }
+
+  /* BOTTOM NAV indicator */
+  .footer-note {
+    position: relative; z-index: 10;
+    text-align: center;
+    padding: 0 16px 32px;
+    color: var(--text3);
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+  }
+  .footer-note span { color: var(--blue3); }
+
+  /* Live rates badge */
+  .live-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(16,185,129,0.12);
+    border: 1px solid rgba(16,185,129,0.3);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    color: var(--success);
+    margin-bottom: 14px;
+  }
+  .live-dot {
+    width: 6px; height: 6px;
+    background: var(--success);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%,100%{opacity:1} 50%{opacity:0.3}
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="orb1"></div>
+<div class="orb2"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">💎</div>
+    <div class="logo-text">Fin<span>Calc</span> Pro</div>
+  </div>
+  <div class="badge">v2.0</div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>Smart <span>Finance</span><br>Calculators</h1>
+  <p>// 9 calculators · dark theme · instant results</p>
+</div>
+
+<!-- CALCULATOR GRID -->
+<div class="calc-grid">
+  <div class="calc-card c1" onclick="openCalc('gst')">
+    <div class="card-icon">🧾</div>
+    <div class="card-label">GST Calculator</div>
+    <div class="card-desc">Tax inclusive/exclusive</div>
+  </div>
+  <div class="calc-card c2" onclick="openCalc('emi')">
+    <div class="card-icon">🏦</div>
+    <div class="card-label">EMI Calculator</div>
+    <div class="card-desc">Monthly installments</div>
+  </div>
+  <div class="calc-card c3" onclick="openCalc('loan')">
+    <div class="card-icon">💰</div>
+    <div class="card-label">Loan Calculator</div>
+    <div class="card-desc">Total repayment</div>
+  </div>
+  <div class="calc-card c4" onclick="openCalc('discount')">
+    <div class="card-icon">🏷️</div>
+    <div class="card-label">Discount Calc</div>
+    <div class="card-desc">Sale price & savings</div>
+  </div>
+  <div class="calc-card c5" onclick="openCalc('salary')">
+    <div class="card-icon">💼</div>
+    <div class="card-label">Salary Calculator</div>
+    <div class="card-desc">In-hand take home</div>
+  </div>
+  <div class="calc-card c6" onclick="openCalc('si')">
+    <div class="card-icon">📈</div>
+    <div class="card-label">Simple Interest</div>
+    <div class="card-desc">P × R × T formula</div>
+  </div>
+  <div class="calc-card c7" onclick="openCalc('age')">
+    <div class="card-icon">🎂</div>
+    <div class="card-label">Age Calculator</div>
+    <div class="card-desc">Exact age in days</div>
+  </div>
+  <div class="calc-card c8" onclick="openCalc('bmi')">
+    <div class="card-icon">⚖️</div>
+    <div class="card-label">BMI Calculator</div>
+    <div class="card-desc">Body mass index</div>
+  </div>
+  <div class="calc-card c9" onclick="openCalc('currency')" style="grid-column:span 2">
+    <div class="card-icon">💱</div>
+    <div class="card-label">Currency Converter — INR ↔ USD · AED · EUR</div>
+    <div class="card-desc">Real-time approximate rates</div>
+  </div>
+</div>
+
+<!-- ─────────── PANELS ─────────── -->
+
+<!-- GST -->
+<div class="panel" id="panel-gst">
+  <div class="panel-header">
+    <div class="ph-icon">🧾</div>
+    <div><div class="panel-title">GST Calculator</div><div class="panel-sub">// goods & services tax</div></div>
+  </div>
+  <div class="panel-body">
+    <div class="field">
+      <label>Amount (₹)</label>
+      <input type="number" id="gst-amount" placeholder="Enter amount" />
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>GST Rate (%)</label>
+        <select id="gst-rate">
+          <option value="5">5%</option>
+          <option value="12">12%</option>
+          <option value="18" selected>18%</option>
+          <option value="28">28%</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Type</label>
+        <select id="gst-type">
+          <option value="excl">Excl. GST</option>
+          <option value="incl">Incl. GST</option>
+        </select>
+      </div>
+    </div>
+    <button class="calc-btn" onclick="calcGST()">⚡ Calculate GST</button>
+    <div class="result-box" id="res-gst">
+      <div class="result-title">📊 GST Breakdown</div>
+      <div class="result-row"><span class="rl">Base Amount</span><span class="rv" id="gst-base">—</span></div>
+      <div class="result-row"><span class="rl">GST Amount</span><span class="rv" id="gst-tax">—</span></div>
+      <div class="result-row highlight"><span class="rl">Total Amount</span><span class="rv" id="gst-total">—</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- EMI -->
+<div class="panel" id="panel-emi">
+  <div class="panel-header">
+    <div class="ph-icon">🏦</div>
+    <div><div class="panel-title">EMI Calculator</div><div class="panel-sub">// equated monthly installment</div></div>
+  </div>
+  <div class="panel-body">
+    <div class="field"><label>Loan Amount (₹)</label><input type="number" id="emi-p" placeholder="e.g. 500000" /></div>
+    <div class="row2">
+      <div class="field"><label>Interest Rate (%/yr)</label><input type="number" id="emi-r" placeholder="e.g. 8.5" step="0.1" /></div>
+      <div class="field"><label>Tenure (Months)</label><input type="number" id="emi-n" placeholder="e.g. 60" /></div>
+    </div>
+    <button class="calc-btn" onclick="calcEMI()">⚡ Calculate EMI</button>
+    <div class="result-box" id="res-emi">
+      <div class="result-title">📊 EMI Breakdown</div>
+      <div class="result-row highlight"><span class="rl">Monthly EMI</span><span class="rv" id="emi-monthly">—</span></div>
+      <div class="result-row"><span class="rl">Total Payment</span><span class="rv" id="emi-total">—</span></div>
+      <div class="result-row"><span class="rl">Total Interest</span><span class="rv" id="emi-interest">—</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- LOAN -->
+<div class="panel" id="panel-loan">
+  <div class="panel-header">
+    <div class="ph-icon">💰</div>
+    <div><div class="panel-title">Loan Calculator</div><div class="panel-sub">// total repayment details</div></div>
+  </div>
+  <div class="panel-body">
+    <div class="field"><label>Principal Amount (₹)</label><input type="number" id="loan-p" placeholder="e.g. 1000000" /></div>
+    <div class="row2">
+      <div class="field"><label>Interest Rate (%/yr)</label><input type="number" id="loan-r" placeholder="e.g. 9" step="0.1" /></div>
+      <div class="field"><label>Tenure (Years)</label><input type="number" id="loan-n" placeholder="e.g. 10" /></div>
+    </div>
+    <button class="calc-btn" onclick="calcLoan()">⚡ Calculate Loan</button>
+    <div class="result-box" id="res-loan">
+      <div class="result-title">📊 Loan Summary</div>
+      <div class="result-row highlight"><span class="rl">Monthly EMI</span><span class="rv" id="loan-emi">—</span></div>
+      <div class="result-row"><span class="rl">Principal</span><span class="rv" id="loan-principal">—</span></div>
+      <div class="result-row"><span class="rl">Total Interest</span><span class="rv" id="loan-int">—</span></div>
+      <div class="result-row"><span class="rl">Total Repayment</span><span class="rv" id="loan-total">—</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- DISCOUNT -->
+<div class="panel" id="panel-discount">
+  <div class="panel-header">
+    <div class="ph-icon">🏷️</div>
+    <div><div class="panel-title">Discount Calculator</div><div class="panel-sub">// sale price & savings</div></div>
+  </div>
+  <div class="panel-body">
+    <div class="field"><label>Original Price (₹)</label><input type="number" id="disc-price" placeholder="e.g. 2999" /></div>
+    <div class="field"><label>Discount (%)</label><input type="number" id="disc-pct" placeholder="e.g. 25" /></div>
+    <button class="calc-btn" onclick="calcDiscount()">⚡ Calculate Discount</button>
+    <div class="result-box" id="res-disc">
+      <div class="result-title">📊 Discount Details</div>
+      <div class="result-row highlight"><span class="rl">Sale Price</span><span class="rv" id="disc-final">—</span></div>
+      <div class="result-row"><span class="rl">You Save</span><span class="rv" id="disc-save">—</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- SALARY -->
+<div class="panel" id="panel-salary">
+  <div class="panel-header">
+    <div class="ph-icon">💼</div>
+    <div><div class="panel-title">Salary Calculator</div><div class="panel-sub">// in-hand take home (India)</div></div>
+  </div>
+  <div class="panel-body">
+    <div class="field"><label>CTC / Gross Annual Salary (₹)</label><input type="number" id="sal-ctc" placeholder="e.g. 800000" /></div>
+    <div class="row2">
+      <div class="field"><label>PF % (Employee)</label><input type="number" id="sal-pf" placeholder="12" value="12" /></div>
+      <div class="field"><label>Income Tax (₹/yr)</label><input type="number" id="sal-tax" placeholder="e.g. 50000" value="0" /></div>
+    </div>
+    <button class="calc-btn" onclick="calcSalary()">⚡ Calculate Salary</button>
+    <div class="result-box" id="res-sal">
+      <div class="result-title">📊 Salary Breakdown</div>
+      <div class="result-row highlight"><span class="rl">Monthly In-Hand</span><span class="rv" id="sal-month">—</span></div>
+      <div class="result-row"><span class="rl">Annual In-Hand</span><span class="rv" id="sal-annual">—</span></div>
+      <div class="result-row"><span class="rl">PF Deduction (yr)</span><span class="rv" id="sal-pfamt">—</span></div>
+      <div class="result-row"><span class="rl">Tax Deduction (yr)</span><span class="rv" id="sal-taxamt">—</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- SIMPLE INTEREST -->
+<div class="panel" id="panel-si">
+  <div class="panel-header">
+    <div class="ph-icon">📈</div>
+    <div><div class="panel-title">Simple Interest</div><div class="panel-sub">// SI = P × R × T / 100</div></div>
+  </div>
+  <div class="panel-body">
+    <div class="field"><label>Principal (₹)</label><input type="number" id="si-p" placeholder="e.g. 50000" /></div>
+    <div class="row2">
+      <div class="field"><label>Rate (% / year)</label><input type="number" id="si-r" placeholder="e.g. 7" step="0.1" /></div>
+      <div class="field"><label>Time (Years)</label><input type="number" id="si-t" placeholder="e.g. 3" step="0.5" /></div>
+    </div>
+    <button class="calc-btn" onclick="calcSI()">⚡ Calculate SI</button>
+    <div class="result-box" id="res-si">
+      <div class="result-title">📊 Interest Details</div>
+      <div class="result-row highlight"><span class="rl">Simple Interest</span><span class="rv" id="si-interest">—</span></div>
+      <div class="result-row"><span class="rl">Total Amount</span><span class="rv" id="si-total">—</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- AGE -->
+<div class="panel" id="panel-age">
+  <div class="panel-header">
+    <div class="ph-icon">🎂</div>
+    <div><div class="panel-title">Age Calculator</div><div class="panel-sub">// exact age breakdown</div></div>
+  </div>
+  <div class="panel-body">
+    <div class="field"><label>Date of Birth</label><input type="date" id="age-dob" /></div>
+    <button class="calc-btn" onclick="calcAge()">⚡ Calculate Age</button>
+    <div class="result-box" id="res-age">
+      <div class="result-title">📊 Age Details</div>
+      <div class="result-row highlight"><span class="rl">Age</span><span class="rv" id="age-main">—</span></div>
+      <div class="result-row"><span class="rl">Total Days</span><span class="rv" id="age-days">—</span></div>
+      <div class="result-row"><span class="rl">Total Months</span><span class="rv" id="age-months">—</span></div>
+      <div class="result-row"><span class="rl">Next Birthday</span><span class="rv" id="age-next">—</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- BMI -->
+<div class="panel" id="panel-bmi">
+  <div class="panel-header">
+    <div class="ph-icon">⚖️</div>
+    <div><div class="panel-title">BMI Calculator</div><div class="panel-sub">// body mass index</div></div>
+  </div>
+  <div class="panel-body">
+    <div class="row2">
+      <div class="field"><label>Weight (kg)</label><input type="number" id="bmi-w" placeholder="e.g. 70" step="0.1" /></div>
+      <div class="field"><label>Height (cm)</label><input type="number" id="bmi-h" placeholder="e.g. 170" /></div>
+    </div>
+    <button class="calc-btn" onclick="calcBMI()">⚡ Calculate BMI</button>
+    <div class="result-box" id="res-bmi">
+      <div class="result-title">📊 BMI Result</div>
+      <div class="result-row highlight"><span class="rl">Your BMI</span><span class="rv" id="bmi-value">—</span></div>
+      <div class="result-row"><span class="rl">Category</span><span class="rv" id="bmi-cat">—</span></div>
+      <div class="result-row"><span class="rl">Ideal Weight</span><span class="rv" id="bmi-ideal">—</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- CURRENCY -->
+<div class="panel" id="panel-currency">
+  <div class="panel-header">
+    <div class="ph-icon">💱</div>
+    <div><div class="panel-title">Currency Converter</div><div class="panel-sub">// INR ↔ USD · AED · EUR</div></div>
+  </div>
+  <div class="panel-body">
+    <div class="live-badge"><div class="live-dot"></div> Approximate Rates (May 2025)</div>
+    <div class="curr-tabs">
+      <div class="curr-tab active" onclick="setCurrPair('USD',this)">🇺🇸 USD</div>
+      <div class="curr-tab" onclick="setCurrPair('AED',this)">🇦🇪 AED</div>
+      <div class="curr-tab" onclick="setCurrPair('EUR',this)">🇪🇺 EUR</div>
+    </div>
+    <div class="field"><label>Amount (₹ INR)</label><input type="number" id="curr-inr" placeholder="Enter INR amount" oninput="liveConvert()" /></div>
+    <div style="text-align:center; color:var(--text3); font-size:12px; margin: -4px 0 10px; font-family:'DM Mono',monospace;">⇅ or</div>
+    <div class="field"><label id="curr-foreign-label">Amount (USD)</label><input type="number" id="curr-foreign" placeholder="Enter foreign amount" oninput="liveConvertBack()" /></div>
+    <button class="calc-btn" onclick="calcCurrency()">⚡ Convert</button>
+    <div class="result-box" id="res-curr">
+      <div class="result-title">📊 Conversion Result</div>
+      <div class="result-row highlight"><span class="rl" id="curr-res-label">INR → USD</span><span class="rv" id="curr-result">—</span></div>
+      <div class="result-row"><span class="rl">Exchange Rate</span><span class="rv" id="curr-rate-show">—</span></div>
+      <div class="result-row"><span class="rl">Reverse Rate</span><span class="rv" id="curr-reverse">—</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="footer-note">Built with ❤️ · <span>FinCalc Pro</span> · All calculations are approximate</div>
+
+<script>
+  // ─── Open/close panel ───
+  let currentPanel = null;
+  function openCalc(id) {
+    const panelId = 'panel-' + id;
+    const cardEl = document.querySelector(`[onclick="openCalc('${id}')"]`);
+    
+    // Remove all active cards
+    document.querySelectorAll('.calc-card').forEach(c => c.classList.remove('active-card'));
+
+    if (currentPanel === panelId) {
+      document.getElementById(panelId).classList.remove('visible');
+      currentPanel = null;
+      return;
+    }
+    // Hide current
+    if (currentPanel) document.getElementById(currentPanel).classList.remove('visible');
+    // Show new
+    document.getElementById(panelId).classList.add('visible');
+    currentPanel = panelId;
+    if (cardEl) cardEl.classList.add('active-card');
+
+    // Scroll to panel
+    setTimeout(() => {
+      document.getElementById(panelId).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
+  }
+
+  // ─── Formatters ───
+  const fmt = n => '₹' + Number(n.toFixed(2)).toLocaleString('en-IN');
+  const fmtF = (n, sym) => sym + ' ' + Number(n.toFixed(4)).toLocaleString('en-US');
+
+  function showResult(id) {
+    document.getElementById(id).classList.add('show');
+  }
+
+  // ─── GST ───
+  function calcGST() {
+    const amt = parseFloat(document.getElementById('gst-amount').value);
+    const rate = parseFloat(document.getElementById('gst-rate').value);
+    const type = document.getElementById('gst-type').value;
+    if (!amt || isNaN(amt)) { alert('Please enter a valid amount'); return; }
+    let base, tax, total;
+    if (type === 'excl') {
+      base = amt; tax = amt * rate / 100; total = base + tax;
+    } else {
+      total = amt; base = amt * 100 / (100 + rate); tax = total - base;
+    }
+    document.getElementById('gst-base').textContent = fmt(base);
+    document.getElementById('gst-tax').textContent = fmt(tax);
+    document.getElementById('gst-total').textContent = fmt(total);
+    showResult('res-gst');
+  }
+
+  // ─── EMI ───
+  function calcEMI() {
+    const P = parseFloat(document.getElementById('emi-p').value);
+    const r = parseFloat(document.getElementById('emi-r').value) / 12 / 100;
+    const n = parseInt(document.getElementById('emi-n').value);
+    if (!P || !r || !n) { alert('Please fill all fields'); return; }
+    const emi = P * r * Math.pow(1+r, n) / (Math.pow(1+r, n) - 1);
+    const total = emi * n;
+    const interest = total - P;
+    document.getElementById('emi-monthly').textContent = fmt(emi);
+    document.getElementById('emi-total').textContent = fmt(total);
+    document.getElementById('emi-interest').textContent = fmt(interest);
+    showResult('res-emi');
+  }
+
+  // ─── LOAN ───
+  function calcLoan() {
+    const P = parseFloat(document.getElementById('loan-p').value);
+    const annualRate = parseFloat(document.getElementById('loan-r').value);
+    const years = parseInt(document.getElementById('loan-n').value);
+    if (!P || !annualRate || !years) { alert('Please fill all fields'); return; }
+    const r = annualRate / 12 / 100;
+    const n = years * 12;
+    const emi = P * r * Math.pow(1+r, n) / (Math.pow(1+r, n) - 1);
+    const total = emi * n;
+    const interest = total - P;
+    document.getElementById('loan-emi').textContent = fmt(emi);
+    document.getElementById('loan-principal').textContent = fmt(P);
+    document.getElementById('loan-int').textContent = fmt(interest);
+    document.getElementById('loan-total').textContent = fmt(total);
+    showResult('res-loan');
+  }
+
+  // ─── DISCOUNT ───
+  function calcDiscount() {
+    const price = parseFloat(document.getElementById('disc-price').value);
+    const pct = parseFloat(document.getElementById('disc-pct').value);
+    if (!price || isNaN(pct)) { alert('Please fill all fields'); return; }
+    const save = price * pct / 100;
+    const final = price - save;
+    document.getElementById('disc-final').textContent = fmt(final);
+    document.getElementById('disc-save').textContent = fmt(save);
+    showResult('res-disc');
+  }
+
+  // ─── SALARY ───
+  function calcSalary() {
+    const ctc = parseFloat(document.getElementById('sal-ctc').value);
+    const pfPct = parseFloat(document.getElementById('sal-pf').value) || 12;
+    const tax = parseFloat(document.getElementById('sal-tax').value) || 0;
+    if (!ctc) { alert('Please enter CTC'); return; }
+    const pfAmt = ctc * pfPct / 100;
+    const annual = ctc - pfAmt - tax;
+    const monthly = annual / 12;
+    document.getElementById('sal-month').textContent = fmt(monthly);
+    document.getElementById('sal-annual').textContent = fmt(annual);
+    document.getElementById('sal-pfamt').textContent = fmt(pfAmt);
+    document.getElementById('sal-taxamt').textContent = fmt(tax);
+    showResult('res-sal');
+  }
+
+  // ─── SIMPLE INTEREST ───
+  function calcSI() {
+    const P = parseFloat(document.getElementById('si-p').value);
+    const R = parseFloat(document.getElementById('si-r').value);
+    const T = parseFloat(document.getElementById('si-t').value);
+    if (!P || !R || !T) { alert('Please fill all fields'); return; }
+    const si = P * R * T / 100;
+    document.getElementById('si-interest').textContent = fmt(si);
+    document.getElementById('si-total').textContent = fmt(P + si);
+    showResult('res-si');
+  }
+
+  // ─── AGE ───
+  function calcAge() {
+    const dob = new Date(document.getElementById('age-dob').value);
+    if (!document.getElementById('age-dob').value) { alert('Please select DOB'); return; }
+    const today = new Date();
+    let years = today.getFullYear() - dob.getFullYear();
+    let months = today.getMonth() - dob.getMonth();
+    let days = today.getDate() - dob.getDate();
+    if (days < 0) { months--; const prev = new Date(today.getFullYear(), today.getMonth(), 0); days += prev.getDate(); }
+    if (months < 0) { years--; months += 12; }
+    const totalDays = Math.floor((today - dob) / 86400000);
+    const totalMonths = years * 12 + months;
+    // Next birthday
+    const nextBday = new Date(today.getFullYear(), dob.getMonth(), dob.getDate());
+    if (nextBday <= today) nextBday.setFullYear(today.getFullYear() + 1);
+    const daysToNext = Math.ceil((nextBday - today) / 86400000);
+
+    document.getElementById('age-main').textContent = `${years}y ${months}m ${days}d`;
+    document.getElementById('age-days').textContent = totalDays.toLocaleString('en-IN') + ' days';
+    document.getElementById('age-months').textContent = totalMonths.toLocaleString('en-IN') + ' months';
+    document.getElementById('age-next').textContent = `${daysToNext} days away`;
+    showResult('res-age');
+  }
+
+  // ─── BMI ───
+  function calcBMI() {
+    const w = parseFloat(document.getElementById('bmi-w').value);
+    const h = parseFloat(document.getElementById('bmi-h').value) / 100;
+    if (!w || !h) { alert('Please fill all fields'); return; }
+    const bmi = w / (h * h);
+    let cat;
+    if (bmi < 18.5) cat = '🔵 Underweight';
+    else if (bmi < 25) cat = '🟢 Normal';
+    else if (bmi < 30) cat = '🟡 Overweight';
+    else cat = '🔴 Obese';
+    const idealMin = (18.5 * h * h).toFixed(1);
+    const idealMax = (24.9 * h * h).toFixed(1);
+    document.getElementById('bmi-value').textContent = bmi.toFixed(1);
+    document.getElementById('bmi-cat').textContent = cat;
+    document.getElementById('bmi-ideal').textContent = `${idealMin}–${idealMax} kg`;
+    showResult('res-bmi');
+  }
+
+  // ─── CURRENCY ───
+  const rates = { USD: 83.5, AED: 22.9, EUR: 90.2 };
+  let currPair = 'USD';
+
+  function setCurrPair(pair, el) {
+    currPair = pair;
+    document.querySelectorAll('.curr-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('curr-foreign-label').textContent = `Amount (${pair})`;
+    document.getElementById('curr-inr').value = '';
+    document.getElementById('curr-foreign').value = '';
+    document.getElementById('res-curr').classList.remove('show');
+  }
+
+  function liveConvert() {
+    const inr = parseFloat(document.getElementById('curr-inr').value);
+    if (!isNaN(inr) && inr > 0) {
+      document.getElementById('curr-foreign').value = (inr / rates[currPair]).toFixed(4);
+    }
+  }
+  function liveConvertBack() {
+    const foreign = parseFloat(document.getElementById('curr-foreign').value);
+    if (!isNaN(foreign) && foreign > 0) {
+      document.getElementById('curr-inr').value = (foreign * rates[currPair]).toFixed(2);
+    }
+  }
+
+  function calcCurrency() {
+    const inr = parseFloat(document.getElementById('curr-inr').value);
+    const foreign = parseFloat(document.getElementById('curr-foreign').value);
+    const sym = { USD:'$', AED:'د.إ', EUR:'€' };
+    if (inr && !isNaN(inr)) {
+      const converted = inr / rates[currPair];
+      document.getElementById('curr-res-label').textContent = `INR → ${currPair}`;
+      document.getElementById('curr-result').textContent = sym[currPair] + converted.toFixed(4);
+      document.getElementById('curr-rate-show').textContent = `1 USD = ₹${rates['USD']} | 1 AED = ₹${rates['AED']} | 1 EUR = ₹${rates['EUR']}`;
+      document.getElementById('curr-reverse').textContent = `1 ${currPair} = ₹${rates[currPair]}`;
+      showResult('res-curr');
+    } else if (foreign && !isNaN(foreign)) {
+      const converted = foreign * rates[currPair];
+      document.getElementById('curr-res-label').textContent = `${currPair} → INR`;
+      document.getElementById('curr-result').textContent = '₹' + converted.toFixed(2);
+      document.getElementById('curr-rate-show').textContent = `1 ${currPair} = ₹${rates[currPair]}`;
+      document.getElementById('curr-reverse').textContent = `₹1 = ${(1/rates[currPair]).toFixed(5)} ${currPair}`;
+      showResult('res-curr');
+    }
+  }
+</script>
+</body>
+</html>
